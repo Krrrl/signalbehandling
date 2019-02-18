@@ -13,6 +13,14 @@ t = 0:Fs:(1-fs)/fs;
 sig = koeff(1,1);
 
 for i = 2:N
-    amplitude = koeff(i,i);
+    amplitude = koeff(i,1);
+    disp(
     f = (i-1)*f1;
-    fase = koeff(i,
+    fase = koeff(i,2);
+    disp(fase);
+    subsig = amplitude*cos(2*pi*f*t + fase);
+    disp(subsig);
+    sig = sig + subsig;
+end
+
+end
