@@ -15,17 +15,25 @@ X = fft(signal(T), N);
 Xabs = (abs(X)/(N));
 Xang = angle(X);
 
+for i = 1:N
+    if(Xabs(i) < (max(Xabs)/100))
+        Xang(i) = 0;
+    end
+end
+
+
+
 figure;
 plot(t, signal(T)), xlabel('t'),
                             ylabel('x(t)'),
                                 title('The input signal');
 
 figure;
-stem(t, Xabs), xlabel('t'), 
+stem(T, Xabs), xlabel('sample[n]'), 
                 ylabel('Amplitude'), 
                     title('Absolute values of Signal');
 
 figure;
-stem(t, Xang), xlabel('t'),
+stem(T, Xang), xlabel('sample[n]'),
                 ylabel('phase'),
                    title('Phasediagram of Signal');

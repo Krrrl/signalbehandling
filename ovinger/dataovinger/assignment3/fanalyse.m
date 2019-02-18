@@ -1,11 +1,9 @@
 function [Xabs, Xang] = fanalyse(signal, N, fs)
-%k = 1/N; %koeffisient nummer.. Hva skal k være?
+k = N; %koeffisient nummer.. Hva skal k være?
 
-sampled_time = N/fs;
-Fs = 1/fs;
+Fs = (fs*k)/N;
 
-
-t = 0:Fs:(sampled_time-Fs); %Dette blir ikke rett?
+t = 0:(1/N):(1-(1/N)); %<-- can only handle looking into a 1 second period of the signal(smushes all in there).
 
 %signal = str2func(input('Input function to FFT: '));
 
@@ -17,17 +15,23 @@ X = fft(signal(T), N);
 Xabs = (abs(X)/(N));
 Xang = angle(X);
 
+for i = 1:N
+    if(Xabs(i) < (max(Xabs)/100))
+        Xang(i) = 0;
+    end
+end
+
 figure;
 plot(t, signal(T)), xlabel('t'),
                             ylabel('x(t)'),
                                 title('The input signal');
 
 figure;
-stem(t, Xabs), xlabel('t'), 
+stem(T, Xabs), xlabel('sample[n]'), 
                 ylabel('Amplitude'), 
                     title('Absolute values of Signal');
 
 figure;
-stem(t, Xang), xlabel('t'),
+stem(T, Xang), xlabel('sample[n]'),
                 ylabel('phase'),
                    title('Phasediagram of Signal');
