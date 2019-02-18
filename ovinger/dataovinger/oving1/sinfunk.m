@@ -1,5 +1,5 @@
 function x = sinfunk(f1)
-%x=sinfunk(f1)
+x=sinfunk(f1)
 %
 %Denne funksjonen lager et sinusformet signal med frekvens f1.
 %Samplingsfrekvensen er 8000Hz, f1 må derfor være mindre enn
