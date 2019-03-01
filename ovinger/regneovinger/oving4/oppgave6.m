@@ -39,4 +39,12 @@ ylabel('Amplitude');
 title('Beat notes');
 %legend([x_beat, x_envl], 'Beat notes', 'Beat note "Envelope"');
 
+%c)
+x_center = cos(2*pi*f_center*t);
+x_delta = 2*cos(2*pi*f_delta*t);
 
+subplot(2,1,1);
+plot(t, x_center, 'b');
+
+subplot(2,1,2);
+plot(t, x_delta, 'r');
