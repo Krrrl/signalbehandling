@@ -41,6 +41,25 @@ DFT_ecg_noised1 = fft(ecg_noised1(ecg_T));
 DFT_ecg_noised2 = fft(ecg_noised2(ecg_T));
 DFT_ecg_noised3 = fft(ecg_noised3(ecg_T));
 
+%DFT analysis of the first signal
+sig1_ABS = abs(DFT_ecg_noised1)/512;
+sig1_ANG = angle(DFT_ecg_noised1);
+
+for i = 1:512
+    if(sig1_ABS(i) < (max(sig1_ABS)/50))
+        sig1_ANG(i) = 0;
+    end
+end
+
+%Showing the DFT results from the first signal:
+figure(2);
+subplot(2, 1, 1);
+stem(ecg_T, sig1_ABS);
+title('Absolute value of first noised signal');
+
+subplot(2, 1, 2);
+stem(ecg_T, sig1_ANG);
+title('Phase of first noised signal');
 
 
 %Working on the first of the noised signals
@@ -62,7 +81,7 @@ ecg_T_shifted = ecg_t(1:end-delay);
 
 
 %plotting the results of the filtering
-figure(2);
+figure(3);
 subplot(4, 1, 1);
 plot(ecg_t_single_periode, ecg_raw(ecg_T));
 grid minor
