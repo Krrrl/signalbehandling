@@ -1,0 +1,18 @@
+function [shifted_time, shifted_signal] = negate_filter_delay(numeric_filter, t_signal, delayed_signal)
+
+delay = mean(grpdelay(numeric_filter));
+
+ecg_noised1_lowpass_filtered_shifted = delayed_signal;
+ecg_noised1_lowpass_filtered_shifted(1:delay) = [];
+
+if length(ecg_noised1_lowpass_filtered_shifted) < length(ecg_T)
+    pad_length = length(ecg_T) - length(ecg_noised1_lowpass_filtered_shifted);
+    ecg_noised1_lowpass_filtered_shifted = [ecg_noised1_lowpass_filtered_shifted zeros(1, pad_length)];
+end
+        
+%ecg_noised1_lowpass_filtered_shifted = [ecg_noised1_lowpass_filtered_shifted zeros(1, 111)];
+%t_shifted = ecg_t(1:end-delay);
+t_shifted = t_signal(1:end-delay)
+
+
+end
