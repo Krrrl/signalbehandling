@@ -7,18 +7,20 @@ ecg_noised1 = ecgdata.sig1;
 ecg_noised2 = ecgdata.sig2;
 ecg_noised3 = ecgdata.sig3;
 ecg_t = ecgdata.t;
-ecg_t_single_periode = ecg_t(1:512);
-ecg_T = 1:512;
+fs = 512;
+ecg_t_single_periode = ecg_t(1:fs);
+ecg_T = 1:fs;
 
 %assigning each signal their own plotting color
+color_original = [0, 0, 0];
 color_noised1 = [0, 0, 0.9];
-color_noised2 = [0.9, 0, 0.9];
+color_noised2 = [0.5686, 0.1176, 0.7059];
 color_noised3 = [0.9, 0, 0];
 
 %plotting of the raw ecg, and the noised signals.
 figure('Name', 'All signals');
 subplot(4, 1, 1);
-plot(ecg_t_single_periode, ecg_raw(ecg_T));
+plot(ecg_t_single_periode, ecg_raw(ecg_T), 'color', color_original);
 grid minor
 title('ECG signal without noise');
 
@@ -37,38 +39,14 @@ plot(ecg_t_single_periode, ecg_noised3(ecg_T), 'color', color_noised3);
 grid minor
 title('3. ECG signal with noise[hard(?)]');
 
-%Performing a DFT of the signals
-
-%from assignment 2 we know that we need approximately N=60 for the DFT to
-%accurately reconstruct the ECG signal.
-DFT_ecg_raw = fft(ecg_raw(ecg_T), 120);
-DFT_ecg_noised1 = fft(ecg_noised1(ecg_T));
-DFT_ecg_noised2 = fft(ecg_noised2(ecg_T));
-DFT_ecg_noised3 = fft(ecg_noised3(ecg_T));
-
 %%%%%%%%%%%%%%%%%% 1. Noised signal %%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%% DFT analysis %%%%%%%%%%%%%%%%%%%
 
 %DFT analysis of the first signal
-sig1_ABS = abs(DFT_ecg_noised1)/length(ecg_T);
-sig1_ANG = angle(DFT_ecg_noised1);
-
-for i = 1:length(ecg_T)
-    if(sig1_ABS(i) < (max(sig1_ABS)/50))
-        sig1_ANG(i) = 0;
-    end
-end
-
-%Showing the DFT results from the first signal:
-figure('Name', 'DFT components of 1. ECG signal');
-subplot(2, 1, 1);
-stem(ecg_T, sig1_ABS, 'color', color_noised1);
-title('Absolute value of signal');
-
-subplot(2, 1, 2);
-stem(ecg_T, sig1_ANG, 'color', color_noised1);
-title('Phase of signal');
+[DFT_ABS_noised1, DFT_ANG_noised1] = fanalyse(ecg_noised1(ecg_T), length(ecg_noised1), fs);
+DFT_ecg_noised1 = DFT_ABS_noised1 .* exp(1i * DFT_ANG_noised1);
+%DFT_ecg_noised1_single_periode = DFT_ecg_noised1(1:length(ecg_T);
 
 %From reading the components of the DFT, identified manually
 DFT_ecg_noised1(463) = 0;
@@ -79,13 +57,16 @@ DFT_ecg_noised1(51) = 0;
 %applying the designed filter to the first signal.
 %the filter was designed with the noise parameters estimated to be about
 %A=0.1 and T_s = 0.02.
-if(length(lowpass_designfilt) < length(ecg_t))
-   pad_length = length(ecg_t) - length(lowpass_designfilt);
-   lowpass_designfilt = [lowpass_designfilt zeros(1, pad_length)];  
-end
+
+%lowpass_designfilt = designfilt('lowpassfir', 'PassbandFrequency', 10, 'StopbandFrequency', 15, 'PassbandRipple', 1, 'StopbandAttenuation', 60, 'SampleRate', 512);
+
+%if(length(lowpass_designfilt) < length(ecg_t))
+%   pad_length = length(ecg_t) - length(lowpass_designfilt);
+%   lowpass_designfilt = [lowpass_designfilt zeros(1, pad_length)];  
+%end
 
 %       ecg_noised1_lowpass_filtered = filter(lowpass_designfilt, ecg_noised1(ecg_T));
-ecg_noied1_lowpass_filtered = freqz(lowpass_designfilt, ecg_noised1);
+ecg_noised1_lowpass_filtered = filter(lowpass_designfilt, ecg_noised1);
 
 %Canceling the delay caused by the filtering
 ecg_noised1_lowpass_filtered_shifted = negate_filter_delay(lowpass_designfilt, ecg_t, ecg_noised1_lowpass_filtered);
@@ -95,7 +76,7 @@ ecg_noised1_lowpass_filtered_shifted = negate_filter_delay(lowpass_designfilt, e
 figure('Name', ' 1. ECG signal processing');
 
 subplot(5, 1, 1);
-plot(ecg_t_single_periode, ecg_raw(ecg_T));
+plot(ecg_t_single_periode, ecg_raw(ecg_T), 'color', color_original);
 grid minor
 title('Signal without noise');
 
@@ -114,8 +95,8 @@ plot(ecg_t_single_periode, ecg_noised1_lowpass_filtered_shifted(ecg_T), 'color',
 grid minor
 title('Lowpass filtered and shifted signal');
 
-subplot(5, 1, 4);
-plot(ecg_t_single_periode, ifft(DFT_ecg_noised1), 'color', color_noised1);
+subplot(5, 1, 5);
+plot(ecg_t_single_periode, real(ifft(DFT_ecg_noised1(ecg_T))), 'color', color_noised1);
 grid minor
 title('DFT reconstructed signal, n = 51 = 463 = 0');
 
@@ -124,24 +105,8 @@ title('DFT reconstructed signal, n = 51 = 463 = 0');
 
 %%%%%%%%%%%%%%%%%% DFT analysis %%%%%%%%%%%%%%%%%%%
 
-sig2_ABS = abs(DFT_ecg_noised2)/length(ecg_T);
-sig2_ANG = angle(DFT_ecg_noised2); 
-
-for i = 1:length(ecg_T)
-    if(sig2_ABS(i) < (max(sig2_ABS)/50))
-        sig2_ANG(i) = 0;
-    end
-end
-
-%Showing the DFT results from the second signal:
-figure('Name', 'DFT components of 2. ECG signal');
-subplot(2, 1, 1);
-stem(ecg_T, sig2_ABS, 'color', color_noised2);
-title('Absolute value of 2. noised signal');
-
-subplot(2, 1, 2);
-stem(ecg_T, sig2_ANG, 'color', color_noised2);
-title('Phase of 2. noised signal');
+[DFT_ABS_noised2, DFT_ANG_noised2] = fanalyse(ecg_noised2, length(ecg_noised2), fs);
+DFT_ecg_noised2 = DFT_ABS_noised2 .* exp(1i * DFT_ANG_noised2);
 
 DFT_ecg_noised2(463) = 0;
 DFT_ecg_noised2(51) = 0;
@@ -154,34 +119,41 @@ DFT_ecg_noised2(31) = 0;
 
 %%%%%%%%%%%%%%%%%% FILTER %%%%%%%%%%%%%%%%%%%
 
-if(length(lowpass_designfilt) < length(ecg_t))
-   pad_length = length(ecg_t) - length(lowpass_designfilt);
-   lowpass_designfilt = [lowpass_designfilt zeros(1, pad_length)];  
-end
+%if(length(lowpass_designfilt) < length(ecg_t))
+%   pad_length = length(ecg_t) - length(lowpass_designfilt);
+%   lowpass_designfilt = [lowpass_designfilt zeros(1, pad_length)];  
+%end
 
-%Placeholder
-ecg_noised2_lowpass_filtered_shifted = zeros(1, length(ecg_t));
+
+ecg_noised2_lowpass_filtered = filter(lowpass_designfilt, ecg_noised2);
+
+ecg_noised2_lowpass_filtered_shifted = negate_filter_delay(lowpass_designfilt, ecg_t, ecg_noised2_lowpass_filtered);
 
 
 
 figure('Name', '2. ECG signal processing');
-subplot(4, 1, 1);
-plot(ecg_t_single_periode, ecg_raw(ecg_T));
+subplot(5, 1, 1);
+plot(ecg_t_single_periode, ecg_raw(ecg_T), 'color', color_original);
 grid minor
 title('ECG signal without noise');
 
-subplot(4, 1, 2);
+subplot(5, 1, 2);
 plot(ecg_t_single_periode, ecg_noised2(ecg_T), 'color', color_noised2);
 grid minor
 title('2. ECG signal with noise');
 
-subplot(4, 1, 3);
+subplot(5, 1, 3);
+plot(ecg_t_single_periode, ecg_noised2_lowpass_filtered(ecg_T), 'color', color_noised2);
+grid minor
+title('Lowpass filtered, non-shifted signal');
+
+subplot(5, 1, 4);
 plot(ecg_t_single_periode, ecg_noised2_lowpass_filtered_shifted(ecg_T), 'color', color_noised2);
 grid minor
-title('Lowpass filtered 2. ECG with noise');
+title('Lowpass filtered and shifted signal');
 
-subplot(4, 1, 4);
-plot(ecg_t_single_periode, ifft(DFT_ecg_noised2));
+subplot(5, 1, 5);
+plot(ecg_t_single_periode, real(ifft(DFT_ecg_noised2(ecg_T))), 'color', color_noised2);
 grid minor
 title('2. ECG signal reconstructed after DFT component removal');
 
@@ -189,24 +161,8 @@ title('2. ECG signal reconstructed after DFT component removal');
 
 %%%%%%%%%%%%%%%%%% DFT analysis %%%%%%%%%%%%%%%%%%%
 
-sig3_ABS = abs(DFT_ecg_noised3)/length(ecg_T);
-sig3_ANG = angle(DFT_ecg_noised3); 
-
-for i = 1:length(ecg_T)
-    if(sig3_ABS(i) < (max(sig3_ABS)/50))
-        sig3_ANG(i) = 0;
-    end
-end
-
-%Showing the DFT results from the third signal:
-figure('Name', 'DFT components of 3. ECG signal');
-subplot(2, 1, 1);
-stem(ecg_T, sig3_ABS);
-title('Absolute value of 3. noised signal');
-
-subplot(2, 1, 2);
-stem(ecg_T, sig3_ANG);
-title('Phase of 3. noised signal');
+[DFT_ABS_noised3, DFT_ANG_noised3] = fanalyse(ecg_noised3, length(ecg_noised3), fs);
+DFT_ecg_noised3 = DFT_ABS_noised3 .* exp(1i * DFT_ANG_noised3);
 
 %DFT_ecg_noised3(463) = 0;
 %DFT_ecg_noised3(51) = 0;
@@ -221,33 +177,40 @@ DFT_ecg_noised3(20:490) = 0;
 
 %%%%%%%%%%%%%%%%%% FILTER %%%%%%%%%%%%%%%%%%%
 
-if(length(lowpass_designfilt) < length(ecg_t))
-   pad_length = length(ecg_t) - length(lowpass_designfilt);
-   lowpass_designfilt = [lowpass_designfilt zeros(1, pad_length)];  
-end
+%if(length(lowpass_designfilt) < length(ecg_t))
+%   pad_length = length(ecg_t) - length(lowpass_designfilt);
+%   lowpass_designfilt = [lowpass_designfilt zeros(1, pad_length)];  
+%end
 
-%Placeholder
-ecg_noised3_lowpass_filtered_shifted = zeros(1, length(ecg_t));
+%       ecg_noised1_lowpass_filtered = filter(lowpass_designfilt, ecg_noised1(ecg_T));
+ecg_noised3_lowpass_filtered = filter(lowpass_designfilt, ecg_noised3);
 
+%Canceling the delay caused by the filtering
+ecg_noised3_lowpass_filtered_shifted = negate_filter_delay(lowpass_designfilt, ecg_t, ecg_noised3_lowpass_filtered);
 
 
 figure('Name', '3. ECG signal processing');
-subplot(4, 1, 1);
-plot(ecg_t_single_periode, ecg_raw(ecg_T));
+subplot(5, 1, 1);
+plot(ecg_t_single_periode, ecg_raw(ecg_T), 'color', color_original);
 grid minor
 title('ECG signal without noise');
 
-subplot(4, 1, 2);
-plot(ecg_t_single_periode, ecg_noised3(ecg_T));
+subplot(5, 1, 2);
+plot(ecg_t_single_periode, ecg_noised3(ecg_T), 'color', color_noised3);
 grid minor
 title('3. ECG signal with noise');
 
-subplot(4, 1, 3);
-plot(ecg_t_single_periode, ecg_noised3_lowpass_filtered_shifted(ecg_T));
+subplot(5, 1, 3);
+plot(ecg_t_single_periode, ecg_noised2_lowpass_filtered(ecg_T), 'color', color_noised3);
 grid minor
-title('Lowpass filtered 3. ECG with noise');
+title('Lowpass filtered, non-shifted signal');
 
-subplot(4, 1, 4);
-plot(ecg_t_single_periode, ifft(DFT_ecg_noised3));
+subplot(5, 1, 4);
+plot(ecg_t_single_periode, ecg_noised3_lowpass_filtered_shifted(ecg_T), 'color', color_noised3);
+grid minor
+title('Lowpass filtered and shifted signal');
+
+subplot(5, 1, 5);
+plot(ecg_t_single_periode, real(ifft(DFT_ecg_noised3(ecg_T))), 'color', color_noised3);
 grid minor
 title('3. ECG signal reconstructed after DFT component removal');
